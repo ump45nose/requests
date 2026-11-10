@@ -1484,6 +1484,39 @@ class TestRequests:
         chunks = r.iter_content(decode_unicode=True)
         assert all(isinstance(chunk, str) for chunk in chunks)
 
+    def test_iter_lines_delimiter_type_mismatch(self):
+        """A str/bytes delimiter should match the type of each chunk.
+
+        When encoding is None, decode_unicode still yields bytes. A str
+        delimiter used to raise TypeError on chunk.split(). The same
+        mismatch happens with a bytes delimiter after a successful decode.
+        """
+
+        def make_response(encoding, body=b"line one\nline two\nline three"):
+            r = requests.Response()
+            r.status_code = 200
+            r.raw = io.BytesIO(body)
+            r.encoding = encoding
+            return r
+
+        expected_bytes = [b"line one", b"line two", b"line three"]
+        expected_text = ["line one", "line two", "line three"]
+
+        r = make_response(None)
+        assert list(r.iter_lines(decode_unicode=True)) == expected_bytes
+
+        r = make_response(None)
+        assert list(r.iter_lines(decode_unicode=True, delimiter="\n")) == expected_bytes
+
+        r = make_response(None)
+        assert list(r.iter_lines(delimiter="\n")) == expected_bytes
+
+        r = make_response("utf-8")
+        assert list(r.iter_lines(decode_unicode=True, delimiter="\n")) == expected_text
+
+        r = make_response("utf-8")
+        assert list(r.iter_lines(decode_unicode=True, delimiter=b"\n")) == expected_text
+
     def test_response_reason_unicode(self):
         # check for unicode HTTP status
         r = requests.Response()

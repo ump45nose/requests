@@ -1008,6 +1008,7 @@ class Response:
         """
 
         pending: str | bytes | None = None
+        split_on: str | bytes | None = delimiter
 
         for chunk in self.iter_content(
             chunk_size=chunk_size, decode_unicode=decode_unicode
@@ -1016,8 +1017,17 @@ class Response:
                 # TODO: remove cast after iter_lines rewrite
                 chunk = cast("str | bytes", pending + chunk)
 
-            if delimiter:
-                lines = chunk.split(delimiter)  # type: ignore[arg-type]
+            if split_on:
+                # iter_content may yield bytes when decode_unicode is False,
+                # or when decode_unicode is True but no encoding is set.
+                # Accept a delimiter of the other type in those cases.
+                if isinstance(chunk, bytes) is not isinstance(split_on, bytes):
+                    encoding = self.encoding or "utf-8"
+                    if isinstance(chunk, bytes):
+                        split_on = cast(str, split_on).encode(encoding)
+                    else:
+                        split_on = cast(bytes, split_on).decode(encoding)
+                lines = chunk.split(split_on)
             else:
                 lines = chunk.splitlines()
 

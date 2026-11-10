@@ -4,7 +4,11 @@ Release History
 dev
 ---
 
-- \[Short description of non-trivial change.\]
+**Bugfixes**
+- Fixed `Response.iter_lines()` raising `TypeError` when `delimiter`
+  and the yielded chunk have different `str`/`bytes` types, for example
+  a `str` delimiter with `decode_unicode=True` when `Response.encoding`
+  is `None`. (#7645)
 
 
 2.34.2 (2026-05-14)
